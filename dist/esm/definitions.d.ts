@@ -64,9 +64,11 @@ export type CurrentEntitlementsResponseMessage = "Incompatible with web" | "Succ
 export interface PurchaseProductResponse {
     responseCode: PurchaseProductIOSResponseCode | PurchaseProductAndroidResponseCode;
     responseMessage: PurchaseProductIOSResponseMessage | PurchaseProductAndroidResponseMessage;
-    receipt?: string;
+    receiptString?: string;
     currency?: string;
     productId?: string;
+    productPrice?: number;
+    transactionPrice?: number;
 }
 export type PurchaseProductIOSResponseCode = -1 | 0 | 1 | 2 | 3 | 4 | 5;
 export type PurchaseProductIOSResponseMessage = "Incompatible with web" | "Successfully purchased product" | "Could not find a product matching the given productIdentifier" | "Product seems to have been purchased but the transaction failed verification" | "User closed the native popover before purchasing" | "Product request made but is currently pending - likely due to parental restrictions" | "An unknown error occurred whilst in the purchasing process";

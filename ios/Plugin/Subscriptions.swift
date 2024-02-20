@@ -123,13 +123,25 @@ import UIKit
                             let receiptString = receiptData.base64EncodedString(options: [Data.Base64EncodingOptions.endLineWithCarriageReturn])
                             print("Receipt String: ", receiptString)
 
-                            return [
+                            var responseDict: [String: Any] = [
                                 "responseCode": 0,
                                 "responseMessage": "Successfully purchased product",
                                 "receiptString": receiptString,
-                                "currency": transaction.currency,
-                                "productId": transaction.productID
-                          ];
+                                "productId": transaction.productID,
+                                "productPrice": product.price,
+                            ]
+                          
+                            if let price = transaction.price {
+                                responseDict["transactionPrice"] = price
+                            }
+                            
+                            if #available(iOS 16.0, *) {
+                                if let currency = transaction.currency {
+                                    responseDict["currency"] = String(describing: currency)
+                                }
+                            }
+
+                            return responseDict
 
                         }
                         catch { print("Couldn't read receipt data with error: " + error.localizedDescription) }
@@ -137,11 +149,8 @@ import UIKit
 
                     return [
                         "responseCode": 0,
-                        "responseMessage": "Successfully purchased product",
-                        "receiptString": "",
-                        "currency": transaction.currency,
-                        "productId": transaction.productID
-                    ];
+                        "responseMessage": "Successfully purchased product"
+                    ]
 
                 case .userCancelled:
 
