@@ -110,9 +110,33 @@ import UIKit
                     };
             
                     await transaction.finish();
+
+                    if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
+                        FileManager.default.fileExists(atPath: appStoreReceiptURL.path) {
+
+
+                        do {
+                            let receiptData = try Data(contentsOf: appStoreReceiptURL, options: .alwaysMapped)
+                            print("Receipt Data: ", receiptData)
+
+
+                            let receiptString = receiptData.base64EncodedString(options: [Data.Base64EncodingOptions.endLineWithCarriageReturn])
+                            print("Receipt String: ", receiptString)
+
+                            return [
+                              "responseCode": 0,
+                              "responseMessage": "Successfully purchased product",
+                              "receiptString": receiptString
+                          ];
+
+                        }
+                        catch { print("Couldn't read receipt data with error: " + error.localizedDescription) }
+                    }
+
                     return [
                         "responseCode": 0,
-                        "responseMessage": "Successfully purchased product"
+                        "responseMessage": "Successfully purchased product",
+                        "receiptString": ""
                     ];
 
                 case .userCancelled:

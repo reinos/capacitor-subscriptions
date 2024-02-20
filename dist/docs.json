@@ -250,6 +250,13 @@
             "PurchaseProductAndroidResponseMessage"
           ],
           "type": "'Incompatible with web' | 'Could not find a product matching the given productIdentifier' | 'Successfully purchased product' | 'Product seems to have been purchased but the transaction failed verification' | 'User closed the native popover before purchasing' | 'Product request made but is currently pending - likely due to parental restrictions' | 'An unknown error occurred whilst in the purchasing process' | 'Successfully opened native popover' | 'Failed to open native popover'"
+        },
+        {
+          "name": "receipt",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
         }
       ]
     },
