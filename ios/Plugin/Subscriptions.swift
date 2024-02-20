@@ -80,7 +80,8 @@ import UIKit
             "data": [
                 "displayName": displayName,
                 "description": description,
-                "price": price
+                "price": price,
+                "productIdentifier": productIdentifier
             ]
         ];
     }
@@ -194,19 +195,20 @@ import UIKit
             
 //            Loop through each verification result in currentEntitlements, verify the transaction
 //            then add it to the transactionDictionary if verified.
+            var index = 0
             for await verification in Transaction.currentEntitlements {
                 
                 let transaction: Transaction? = checkVerified(verification) as? Transaction
                 if(transaction != nil) {
 
-                    transactionDictionary[String(transaction!.id)] = [
+                    transactionDictionary[String(index)] = [
                         "productIdentifier": transaction!.productID,
                         "originalStartDate": transaction!.originalPurchaseDate,
                         "originalId": transaction!.originalID,
                         "transactionId": transaction!.id,
                         "expiryDate": transaction!.expirationDate
                     ]
-                    
+                    index += 1
                 }
                 
             }
