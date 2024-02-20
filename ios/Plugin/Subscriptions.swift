@@ -124,9 +124,11 @@ import UIKit
                             print("Receipt String: ", receiptString)
 
                             return [
-                              "responseCode": 0,
-                              "responseMessage": "Successfully purchased product",
-                              "receiptString": receiptString
+                                "responseCode": 0,
+                                "responseMessage": "Successfully purchased product",
+                                "receiptString": receiptString,
+                                "currency": transaction.currency,
+                                "productId": transaction.productID
                           ];
 
                         }
@@ -136,7 +138,9 @@ import UIKit
                     return [
                         "responseCode": 0,
                         "responseMessage": "Successfully purchased product",
-                        "receiptString": ""
+                        "receiptString": "",
+                        "currency": transaction.currency,
+                        "productId": transaction.productID
                     ];
 
                 case .userCancelled:
