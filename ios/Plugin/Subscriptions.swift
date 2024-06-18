@@ -86,6 +86,43 @@ import UIKit
         ];
     }
 
+//    func validateReceipt(receipt: String) {
+//        // let requestDictionary = ["receipt-data": receipt]
+//        // guard JSONSerialization.isValidJSONObject(requestDictionary), 
+//        //     let requestData = try? JSONSerialization.data(withJSONObject: requestDictionary) else {
+//        //     print("FAULT 1")
+//        //     return
+//        // }
+//        let requestData: [String: Any] = [
+//            "receipt-data": receipt,
+//            "password": "8006fc83269046d499d16a3111d6dbba" // Only needed for subscriptions
+//        ]
+//
+//         guard let httpBody = try? JSONSerialization.data(withJSONObject: requestData, options: []) else {
+//            print("Invalid JSON")
+//            return
+//        }
+//
+//        let storeURL = URL(string: "https://sandbox.itunes.apple.com/verifyReceipt")!
+//        var request = URLRequest(url: storeURL)
+//        request.httpMethod = "POST"
+//        request.httpBody = httpBody
+//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+//
+//        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+//            guard error == nil, let data = data else {
+//                print("FAULT 2")
+//                return
+//            }
+//
+//            if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+//                print(jsonResponse)
+//                // Handle the response
+//            }
+//        }
+//        task.resume()
+//    }
+
     @available(iOS 15.0.0, *)
     @objc public func purchaseProduct(_ productIdentifier: String) async -> PluginCallResultData {
         
@@ -111,17 +148,22 @@ import UIKit
                     };
             
                     await transaction.finish();
+                
+                    // make sure we load the complete transaction history
+                    // otherwise it can be possible that the receipt is not updated
+                    // and stays empty
+                    // let paymentQueue = SKPaymentQueue.default()
+                    // paymentQueue.restoreCompletedTransactions()
+                    refreshReceipt();
 
                     if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
                         FileManager.default.fileExists(atPath: appStoreReceiptURL.path) {
 
-
                         do {
                             let receiptData = try Data(contentsOf: appStoreReceiptURL, options: .alwaysMapped)
-                            print("Receipt Data: ", receiptData)
 
 
-                            let receiptString = receiptData.base64EncodedString(options: [Data.Base64EncodingOptions.endLineWithCarriageReturn])
+                            let receiptString = receiptData.base64EncodedString(options: [])
                             print("Receipt String: ", receiptString)
 
                             var responseDict: [String: Any] = [
@@ -376,4 +418,26 @@ import UIKit
 
     }
 
+    @objc private func refreshReceipt() {
+        let request = SKReceiptRefreshRequest()
+        request.delegate = self
+        request.start()
+    }
+
+}
+
+extension Subscriptions: SKRequestDelegate {
+    public func requestDidFinish(_ request: SKRequest) {
+        if request is SKReceiptRefreshRequest {
+            print("Receipt refresh request finished successfully.")
+            // Handle successful receipt refresh here
+        }
+    }
+
+    public func request(_ request: SKRequest, didFailWithError error: Error) {
+        if request is SKReceiptRefreshRequest {
+            print("Receipt refresh request failed with error: \(error.localizedDescription)")
+            // Handle receipt refresh failure here
+        }
+    }
 }
