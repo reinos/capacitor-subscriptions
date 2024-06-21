@@ -174,12 +174,12 @@ import UIKit
                                 "productPrice": product.price,
                             ]
                           
-                            if let price = transaction.price {
+                            if let price: Decimal = transaction.price {
                                 responseDict["transactionPrice"] = price
                             }
                             
                             if #available(iOS 16.0, *) {
-                                if let currency = transaction.currency {
+                                if let currency: Locale.Currency = transaction.currency {
                                     responseDict["currency"] = String(describing: currency)
                                 }
                             }
