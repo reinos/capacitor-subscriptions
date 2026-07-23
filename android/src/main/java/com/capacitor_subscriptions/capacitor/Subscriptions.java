@@ -13,11 +13,8 @@ import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.ProductDetailsResponseListener;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.PurchaseHistoryRecord;
-import com.android.billingclient.api.PurchaseHistoryResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.android.billingclient.api.QueryPurchaseHistoryParams;
 import com.android.billingclient.api.QueryPurchasesParams;
 import com.getcapacitor.App;
 import com.getcapacitor.JSObject;
@@ -116,7 +113,7 @@ public class Subscriptions {
 
                         try {
 
-                            ProductDetails productDetails = productDetailsList.get(0);
+                            ProductDetails productDetails = productDetailsList.getProductDetailsList().get(0);
                             String productId = productDetails.getProductId();
                             String title = productDetails.getTitle();
                             String desc = productDetails.getDescription();
@@ -174,15 +171,17 @@ public class Subscriptions {
 
         if(billingClientIsConnected == 1) {
 
-            QueryPurchaseHistoryParams queryPurchaseHistoryParams =
-                    QueryPurchaseHistoryParams.newBuilder()
+            // Billing Library 8 removed queryPurchaseHistoryAsync entirely, so only active/pending
+            // purchases can be looked up here now - expired or replaced subscriptions are no longer
+            // retrievable through the client library (Google recommends server-side tracking for that).
+            QueryPurchasesParams queryPurchasesParams =
+                    QueryPurchasesParams.newBuilder()
                             .setProductType(BillingClient.ProductType.SUBS)
                             .build();
 
+            billingClient.queryPurchasesAsync(queryPurchasesParams, (BillingResult billingResult, List<Purchase> list) -> {
 
-            billingClient.queryPurchaseHistoryAsync(queryPurchaseHistoryParams, (BillingResult billingResult, List<PurchaseHistoryRecord> list) -> {
-
-                // Try to loop through the list until we find a purchase history record associated with the passed in productIdentifier.
+                // Try to loop through the list until we find a purchase associated with the passed in productIdentifier.
                 // If we do, then set found to true to break out of the loop, then compile a response with necessary data. Otherwise compile
                 // a response saying that the there were not transactions for the given productIdentifier.
                 int i = 0;
@@ -190,27 +189,21 @@ public class Subscriptions {
                 while (list != null && (i < list.size() && !found)) {
                     try {
 
-                        JSObject currentPurchaseHistoryRecord = new JSObject(list.get(i).getOriginalJson());
-                        Log.i("PurchaseHistory", currentPurchaseHistoryRecord.toString());
+                        Purchase currentPurchase = list.get(i);
 
-                        if (currentPurchaseHistoryRecord.get("productId").equals(productIdentifier)) {
+                        if (currentPurchase.getProducts().contains(productIdentifier)) {
 
                             found = true;
 
                             JSObject data = new JSObject();
-                            String expiryDate = getExpiryDateFromGoogle(productIdentifier, currentPurchaseHistoryRecord.get("purchaseToken").toString());
+                            String expiryDate = getExpiryDateFromGoogle(productIdentifier, currentPurchase.getPurchaseToken());
                             if(expiryDate != null) {
                                 data.put("expiryDate", expiryDate);
                             }
 
-                            String dateFormat = "dd-MM-yyyy hh:mm";
-                            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.setTimeInMillis(Long.parseLong((currentPurchaseHistoryRecord.get("purchaseTime").toString())));
-
-                            data.put("productIdentifier", currentPurchaseHistoryRecord.get("productId"));
-                            data.put("originalId", currentPurchaseHistoryRecord.get("orderId"));
-                            data.put("transactionId", currentPurchaseHistoryRecord.get("orderId"));
+                            data.put("productIdentifier", productIdentifier);
+                            data.put("originalId", currentPurchase.getOrderId());
+                            data.put("transactionId", currentPurchase.getOrderId());
 
                             response.put("responseCode", 0);
                             response.put("responseMessage", "Successfully found the latest transaction matching given productIdentifier");
@@ -225,7 +218,7 @@ public class Subscriptions {
 
                 }
 
-                // If after looping through the list of purchase history records, no records are found to be associated with
+                // If after looping through the list of purchases, no records are found to be associated with
                 // the given product identifier, return a response saying no transactions found
                 if (!found) {
                     response.put("responseCode", 3);
@@ -337,7 +330,7 @@ public class Subscriptions {
                     (billingResult1, productDetailsList) -> {
 
                         try {
-                            ProductDetails productDetails = productDetailsList.get(0);
+                            ProductDetails productDetails = productDetailsList.getProductDetailsList().get(0);
                             BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
                                     .setProductDetailsParamsList(
                                             List.of(
